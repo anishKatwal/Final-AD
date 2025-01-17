@@ -37,4 +37,9 @@
       "PackagePath": "buildMultiTargeting\\IncomeExpenseTracker.props"
     },
     {
-      "Id": "obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebasset
+      "Id": "obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.buildTransitive.IncomeExpenseTracker.props",
+      "PackagePath": "buildTransitive\\IncomeExpenseTracker.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
