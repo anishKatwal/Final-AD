@@ -1,0 +1,168 @@
+﻿@page "/dashboard"
+@using IncomeExpenseTracker.Data
+@using IncomeExpenseTracker.Models
+@inject DatabaseHelper Database
+@inject NavigationManager Navigation
+
+<div class="p-4">
+    <div class="card mb-3" style="padding: 20px; border: 1px solid gray; background-color: white;">
+        <h4>Total Inflow: @(user?.CurrencyType)@totalInflow</h4>
+    </div>
+    <div class="card mb-3" style="padding: 20px; border: 1px solid gray; background-color: white;">
+        <h4>Total Outflow: @(user?.CurrencyType)@totalOutflow</h4>
+    </div>
+    <div class="card mb-3" style="padding: 20px; border: 1px solid gray; background-color: white;">
+        <h4>Total Debts: @(user?.CurrencyType)@totalDebts</h4>
+    </div>
+    <div class="card mb-3" style="padding: 20px; border: 1px solid gray; background-color: white;">
+        <h4>Total Debts Cleared: @(user?.CurrencyType)@totalDebtsCleared</h4>
+    </div>
+    <div class="card mb-3" style="padding: 20px; border: 1px solid gray; background-color: white;">
+        <h4>Total Remaining Debts: @(user?.CurrencyType)@totalRemainingDebts</h4>
+    </div>
+    <div class="grid">
+        <div class="grid-item">
+            <h5 class="text-danger">Top 5 Highest Transactions</h5>
+            @foreach (var transaction in HighestTransactions)
+            {
+                <div>
+                    @transaction.TransDescription <span> @(user?.CurrencyType)@transaction.TransAmount</span>
+                </div>
+            }
+        </div>
+        <div class="grid-item">
+            <h5 class="text-danger">Top 5 Lowest Transactions</h5>
+            @foreach (var transaction in LowestTransactions)
+            {
+                <div>
+                    @transaction.TransDescription <span>@(user?.CurrencyType)@transaction.TransAmount</span>
+                </div>
+            }
+        </div>
+    </div>
+    <div>
+        <h5 class="text-danger text-center">Transaction Record</h5>
+        <div class="row">
+            <div class="col-sm-2">
+                <label>Start Date:</label>
+                <input type="date" @bind="StartDate" class="form-control" />
+            </div>            
+            <div class="col-sm-2">
+                <label>End Date:</label>
+                <input type="date" @bind="EndDate" class="form-control" />
+            </div>            
+            <div class="col-sm-2">
+                <label>Title:</label>
+                <input type="text" @bind="SearchTitle" placeholder="Transaction Title" class="form-control" />
+            </div>
+            <div class="col-sm-2">
+                <label>Tag:</label>
+                <input type="text" @bind="SearchTag" placeholder="Transaction Tag" class="form-control" />
+            </div>            
+            <div class="col-sm-2">
+                <label>Trans. Type:</label>
+                <select @bind="SelectedTransType" class="form-control">
+                    <option value="Cash Inflow">Cash Inflow</option>
+                    <option value="Cash Outflow">Cash Outflow</option>
+                    <option value="Pending Debt">Pending Debt</option>
+                    <option value="Cleared Debt">Cleared Debt</option>
+                    <option value="All Transactions">All Transactions</option>
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <button @onclick="showReport" class="btn btn-primary">Search Transaction</button>
+            </div>
+        </div>
+        <div>
+            <table class="table table-striped table-responsive-sm">
+                <thead>
+                    <tr>
+                        <th>Trans. ID</th>
+                        <th>Trans. Date</th>
+                        <th>Trans. Details</th>
+                        <th>Amount (@user?.CurrencyType)</th>
+                        <th>Notes</th>
+                        @if(SelectedTransType=="Pending Debt" || SelectedTransType=="Cleared Debt")
+                        {
+                            <th>Is Debt Cleared?</th>
+                            <th>Debt Source</th>
+                            <th>Due Date</th>
+                        }                        
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var record in FilteredTransactions)
+                    {
+                        <tr>
+                            <td>@record.TransId</td>
+                            <td>@record.TransDate.ToShortDateString()</td>
+                            <td>@record.TransType / @record.TransTitle /@record.TransTags </td>
+                            <td>@Math.Round(record.TransAmount,2)</td>
+                            <td>@record.Notes</td>
+                            @if (SelectedTransType == "Pending Debt" || SelectedTransType == "Cleared Debt")
+                            {
+                                <td>@record.IsDebtCleared</td>
+                                <td>@record.DebtSource</td>
+                                <td>@record.DueDate</td>
+                            }                            
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel? user=null;
+    // Variables for Transaction Totals
+    private double totalInflow,totalOutflow, totalDebts,totalDebtsCleared, totalRemainingDebts = 0;
+
+    // Transaction Lists
+    private List<TransSummary> HighestTransactions { get; set; } = new();
+    private List<TransSummary> LowestTransactions { get; set; } = new();
+    private List<TransRecord> FilteredTransactions { get; set; } = new();
+
+    // Search and Filter Variables
+    private DateTime StartDate { get; set; } = DateTime.Now.AddMonths(-1);
+    private DateTime EndDate { get; set; } = DateTime.Now;
+    private string SearchTitle { get; set; } = string.Empty;
+    private string SearchTag { get; set; } = string.Empty;
+    private string SelectedTransType { get; set; } = "All Transactions";
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await Database.GetUserAsync();
+        if (user == null)
+            Navigation.NavigateTo("/register");
+        else if (user.IsLoggedIn == false)
+            Navigation.NavigateTo("/login");
+        else
+        {
+            List<TransRecord> list = await Database.GetAllTransactionAsync();
+            totalInflow = list.Where(t => t.TransType.Equals("Cash Inflow")).Sum(t => t.TransAmount);
+            totalOutflow = list.Where(t => t.TransType.Equals("Cash Outflow")).Sum(t => t.TransAmount);
+            totalDebts = list.Where(t => t.TransType.Equals("Debt")).Sum(t => t.TransAmount);
+            totalDebtsCleared = list.Where(t => t.IsDebtCleared == true).Sum(t => t.TransAmount);
+            totalRemainingDebts = list.Where(t => t.TransType.Equals("Debt") && t.IsDebtCleared == false).Sum(t => t.TransAmount);
+            HighestTransactions = list.OrderByDescending(t => t.TransAmount).Take(5).Select(t => new TransSummary { TransDescription = t.TransTitle, TransAmount = t.TransAmount.ToString() }).ToList();
+            LowestTransactions = list.OrderBy(t => t.TransAmount).Take(5).Select(t => new TransSummary { TransDescription = t.TransTitle, TransAmount = t.TransAmount.ToString() }).ToList();
+            await showReport();
+        }
+    }
+    private async Task showReport()
+    {
+        List<TransRecord> list = await Database.GetAllTransactionAsync();
+        FilteredTransactions = list.Where(t =>
+                t.TransDate >= StartDate && t.TransDate <= EndDate &&
+                (string.IsNullOrEmpty(SearchTitle) || t.TransTitle.Contains(SearchTitle, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrEmpty(SearchTag) || t.TransTags.Contains(SearchTag, StringComparison.OrdinalIgnoreCase))).ToList();
+        if (SelectedTransType == "Pending Debt")
+            FilteredTransactions = FilteredTransactions.Where(t => t.TransType.Equals("Debt") && t.IsDebtCleared == false).ToList();
+        else if (SelectedTransType == "Cleared Debt")
+            FilteredTransactions = FilteredTransactions.Where(t => t.TransType.Equals("Debt") && t.IsDebtCleared==true).ToList();
+        else if(SelectedTransType!="All Transactions")
+            FilteredTransactions = FilteredTransactions.Where(t => t.TransType.Equals(SelectedTransType)).ToList();
+    }
+}

@@ -1,0 +1,50 @@
+﻿@page "/register"
+@using IncomeExpenseTracker.Data
+@using IncomeExpenseTracker.Models
+@inject DatabaseHelper Database
+@inject NavigationManager Navigation
+<div class="row">
+    <div class="col-sm-2"></div>
+    <div class="col-sm-8">
+        <p class="h1">Register Page</p>
+        <EditForm Model="@registerUser" OnValidSubmit="RegisterUser" class="form-control">
+            <p><input @bind="registerUser.Username" placeholder="Username" class="form-control" /></p>
+            <p><input @bind="registerUser.Password" type="password" placeholder="Password" class="form-control" /></p>
+            <p><input @bind="registerUser.CurrencyType" placeholder="Currency Type" class="form-control" /></p>
+            <button type="submit" class="form-control btn btn-primary">Register</button>
+        </EditForm>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p style="color: red">@errorMessage</p>
+        }
+    </div>
+    <div class="col-sm-2"></div>
+</div>
+@code {
+    private LoginModel registerUser = new();
+    private string? errorMessage;
+    protected override async Task OnInitializedAsync()
+    {
+        LoginModel user = await Database.GetUserAsync();
+        if (user == null)
+            return;
+        if (user.IsLoggedIn == true)
+            Navigation.NavigateTo("/dashboard");
+        else
+            Navigation.NavigateTo("/login");
+    }
+    private async Task RegisterUser()
+    {
+        var user = await Database.GetUserAsync();
+        if (user == null)
+        {
+            registerUser.IsLoggedIn = true;
+            await Database.AddUserAsync(registerUser);
+            Navigation.NavigateTo("/dashboard");//switch to dashboard after registration
+        }
+        else
+        {
+            errorMessage = "User already exists.";
+        }
+    }
+}

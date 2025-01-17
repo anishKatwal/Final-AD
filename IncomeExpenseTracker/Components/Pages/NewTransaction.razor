@@ -1,0 +1,191 @@
+﻿@page "/newentry"
+@using IncomeExpenseTracker.Data
+@using IncomeExpenseTracker.Models
+@inject DatabaseHelper Database
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<h3>Transaction Entry</h3>
+
+<div class="form-group">
+    <label for="TransTitle">Transaction Title</label>
+    <select id="TransTitle" @bind="SelectedTransTitle" class="form-control">
+        <option value="" disabled selected>Select Transaction Type</option>
+        <option value="Credit">Credit</option>
+        <option value="Gain">Gain</option>
+        <option value="Budget">Budget</option>
+        <option value="Debit">Debit</option>
+        <option value="Spending">Spending</option>
+        <option value="Expenses">Expenses</option>
+        <option value="Debt">Debt</option>
+    </select>
+    @if (string.IsNullOrEmpty(SelectedTransTitle))
+    {
+        <small class="text-danger">Please select a transaction title.</small>
+    }
+</div>
+
+<div class="form-group">
+    <label for="TransAmount">Transaction Amount</label>
+    <input id="TransAmount" type="number" class="form-control" @bind="TransAmount" min="0" placeholder="Enter Amount" />
+    @if (TransAmount <= 0)
+    {
+        <small class="text-danger">Enter a valid amount greater than zero.</small>
+    }
+</div>
+
+<div class="form-group">
+    <label for="TransTags">Transaction Tags</label>
+    <input id="TransTags" type="text" class="form-control" @bind="TransTags" placeholder="Enter Tags (e.g., Monthly, Groceries)" />
+</div>
+
+<div class="form-group">
+    <label for="TransNotes">Notes</label>
+    <textarea id="TransNotes" class="form-control" @bind="Notes" placeholder="Enter Notes"></textarea>
+</div>
+
+@if (IsDebt)
+{
+    <div class="form-group">
+        <label for="DebtSource">Debt Source</label>
+        <input id="DebtSource" type="text" class="form-control" @bind="DebtSource" placeholder="Enter Debt Source" />
+    </div>
+
+    <div class="form-group">
+        <label for="DueDate">Due Date</label>
+        <input id="DueDate" type="date" class="form-control" @bind="DueDate" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+    </div>
+}
+else if(SelectedTransTitle=="Credit" || SelectedTransTitle=="Gain" || SelectedTransTitle == "Budget")
+{
+    <div class="form-group">
+        <label for="DebtClearId">Clearing Debt Trans. Id</label>
+        <input id="DebtClearId" type="number" class="form-control" @bind="DebtClearId" placeholder="Enter Debt Id To Clear" />
+    </div>
+}
+
+<div class="mt-3">
+    <button class="btn btn-primary" @onclick="SubmitTransaction">Submit</button>
+    <button class="btn btn-secondary" @onclick="Back">Back</button>
+</div>
+
+@code {
+    private LoginModel? user = null;
+    private string? SelectedTransTitle { get; set; }
+    private double TransAmount { get; set; }
+    private string? TransTags { get; set; }
+    private string? Notes { get; set; }
+    private string? DebtSource { get; set; }
+    private DateTime DueDate { get; set; } = DateTime.Now.AddDays(1);
+    private int? DebtClearId { get; set; } = null;
+    private bool IsDebt => SelectedTransTitle == "Debt";
+
+    private async Task SubmitTransaction()
+    {
+        // Validate Title
+        if (string.IsNullOrEmpty(SelectedTransTitle))
+        {
+            await ShowAlert("Select Title", "Please select a transaction title.");
+            return;
+        }
+
+        // Validate Amount
+        if (TransAmount <= 0)
+        {
+            await ShowAlert("Invalid Amount", "Please enter a valid amount greater than zero.");
+            return;
+        }
+
+        // Balance check for outflow transactions
+        if (SelectedTransTitle is "Debit" or "Spending" or "Expenses")
+        {
+            List<TransRecord> list = await Database.GetAllTransactionAsync();
+            double balance=list.Where(t => t.IsDebtCleared == null || t.IsDebtCleared == false).Sum(t => t.TransType.Equals("Cash Inflow") || t.TransType.Equals("Debt") ? t.TransAmount : -t.TransAmount);
+            if (balance < TransAmount)
+            {
+                await ShowAlert("Balance Underflow", $"Insufficient balance. Current balance is {balance:C}.");
+                return;
+            }
+        }
+
+        // Create transaction
+        var transaction = new TransRecord
+        {
+            TransId = 0,
+            TransType = SelectedTransTitle switch
+            {
+                "Credit" or "Gain" or "Budget" => "Cash Inflow",
+                "Debit" or "Spending" or "Expenses" => "Cash Outflow",
+                "Debt" => "Debt",
+                _ => throw new InvalidOperationException("Invalid transaction type.")
+            },
+            TransTitle = SelectedTransTitle,
+            TransAmount = TransAmount,
+            TransTags = TransTags??string.Empty,
+            Notes = Notes,
+            TransDate = DateTime.Now,
+            DebtSource = IsDebt ? DebtSource : null,
+            DueDate = IsDebt ? DueDate : null,
+            IsDebtCleared = false
+        };
+        if (DebtClearId != null)
+        {
+            List<TransRecord> allTrans = await Database.GetAllTransactionAsync();
+            TransRecord? myDebt = allTrans.Where(t=>t.TransId==DebtClearId && t.TransType=="Debt" && t.IsDebtCleared==false && t.TransAmount==TransAmount).FirstOrDefault();
+            if (myDebt != null)
+                await Database.ClearDebtAsync(myDebt);
+            else
+            {
+                await ShowAlert("Failure", "No debt with given amount or id. Try again.");
+                return;
+            }
+        }
+
+        // Add transaction to the record
+        bool isSuccess = await Database.AddTransactionAsync(transaction)>0;
+        await ShowAlert(isSuccess ? "Success" : "Failure",
+            isSuccess ? "Transaction added successfully." : "Failed to add the transaction. Try again.");
+        if (isSuccess)
+        {
+            ClearForm();
+        }
+    }
+
+    private void Back()
+    {
+        // Navigate back
+        Navigation.NavigateTo("/");
+    }
+
+    private void ClearForm()
+    {
+        SelectedTransTitle = null;
+        TransAmount = 0;
+        TransTags = null;
+        Notes = null;
+        DebtSource = null;
+        DueDate = DateTime.Now.AddDays(1);
+    }
+
+    private Task ShowAlert(string title, string message)
+    {
+        return JSRuntime.InvokeVoidAsync("alert", $"{title}: {message}").AsTask();
+    }
+
+    private void OnTransTitleChange(ChangeEventArgs e)
+    {
+        SelectedTransTitle = e.Value?.ToString();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        user = await Database.GetUserAsync();
+        if (user == null)
+            Navigation.NavigateTo("/register");
+        else if (user.IsLoggedIn == false)
+            Navigation.NavigateTo("/login");
+        else
+        {
+           
+        }
+    }
+}

@@ -1,0 +1,48 @@
+﻿@page "/"
+@page "/login"
+@using IncomeExpenseTracker.Data
+@using IncomeExpenseTracker.Models
+@inject DatabaseHelper Database
+@inject NavigationManager Navigation
+<div class="row py-5">
+    <div class="col-sm-2"></div>
+    <div class="col-sm-8 py-5">
+        <p class="h1">Login Page</p>
+        <EditForm Model="@loginUser" OnValidSubmit="CheckLogin" class="form-control">
+            <p><input @bind="loginUser.Username" placeholder="Username" class="form-control" /></p>
+            <p><input @bind="loginUser.Password" type="password" placeholder="Password" class="form-control" /></p>
+            <button type="submit" class="form-control btn btn-primary">Login</button>
+        </EditForm>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p style="color: red">@errorMessage</p>
+        }
+    </div>
+    <div class="col-sm-2"></div>
+</div>
+@code {
+    private LoginModel loginUser = new();
+    private string? errorMessage;
+    protected override async Task OnInitializedAsync()
+    {
+        LoginModel user = await Database.GetUserAsync();
+        if (user == null)
+            Navigation.NavigateTo("/register");
+        else if(user.IsLoggedIn==true)
+            Navigation.NavigateTo("/dashboard");
+    }
+    private async Task CheckLogin()
+    {
+        LoginModel user = await Database.GetUserAsync();
+        if (user != null && user.Password == loginUser.Password)
+        {
+            await Database.LoginUserAsync();
+            // Redirect or show success message
+            Navigation.NavigateTo("/dashboard");
+        }
+        else
+        {
+            errorMessage = "Invalid username or password.";
+        }
+    }    
+}

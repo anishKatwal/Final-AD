@@ -1,0 +1,8 @@
+C:\IncomeExpenseTracker\IncomeExpenseTracker\IncomeExpenseTracker\wwwroot\index.html
+C:\IncomeExpenseTracker\IncomeExpenseTracker\IncomeExpenseTracker\wwwroot\css\bootstrap\bootstrap.min.css.map
+C:\IncomeExpenseTracker\IncomeExpenseTracker\IncomeExpenseTracker\wwwroot\css\bootstrap\bootstrap.min.css
+C:\IncomeExpenseTracker\IncomeExpenseTracker\IncomeExpenseTracker\wwwroot\css\app.css
+wwwroot\css\app.css
+wwwroot\css\bootstrap\bootstrap.min.css
+wwwroot\css\bootstrap\bootstrap.min.css.map
+wwwroot\index.html

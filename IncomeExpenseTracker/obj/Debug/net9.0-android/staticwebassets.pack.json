@@ -1,0 +1,45 @@
+{
+  "Files": [
+    {
+      "Id": "c:\\Users\\Anish Katwal\\Desktop\\THIRD YEAR\\Application Development\\Final-AD\\IncomeExpenseTracker\\obj\\Debug\\net9.0-android\\scopedcss\\bundle\\IncomeExpenseTracker.styles.css",
+      "PackagePath": "staticwebassets\\IncomeExpenseTracker.styles.css"
+    },
+    {
+      "Id": "c:\\Users\\Anish Katwal\\Desktop\\THIRD YEAR\\Application Development\\Final-AD\\IncomeExpenseTracker\\wwwroot\\css\\app.css",
+      "PackagePath": "staticwebassets\\css\\app.css"
+    },
+    {
+      "Id": "c:\\Users\\Anish Katwal\\Desktop\\THIRD YEAR\\Application Development\\Final-AD\\IncomeExpenseTracker\\wwwroot\\css\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "c:\\Users\\Anish Katwal\\Desktop\\THIRD YEAR\\Application Development\\Final-AD\\IncomeExpenseTracker\\wwwroot\\css\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "c:\\Users\\Anish Katwal\\Desktop\\THIRD YEAR\\Application Development\\Final-AD\\IncomeExpenseTracker\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-android\\staticwebassets\\msbuild.IncomeExpenseTracker.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-android\\staticwebassets\\msbuild.IncomeExpenseTracker.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-android\\staticwebassets\\msbuild.build.IncomeExpenseTracker.props",
+      "PackagePath": "build\\IncomeExpenseTracker.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-android\\staticwebassets\\msbuild.buildMultiTargeting.IncomeExpenseTracker.props",
+      "PackagePath": "buildMultiTargeting\\IncomeExpenseTracker.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-android\\staticwebassets\\msbuild.buildTransitive.IncomeExpenseTracker.props",
+      "PackagePath": "buildTransitive\\IncomeExpenseTracker.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
